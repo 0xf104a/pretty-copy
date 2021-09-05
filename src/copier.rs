@@ -1,4 +1,3 @@
-use std::io;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
@@ -7,7 +6,7 @@ trait Copier {
     fn new(&self, bs: u64, on_copy_block: &'static dyn Fn(&Self)) -> Self; //bs = block size = amount of bytes to copy before updating a progress
     fn get_bytes_copied(&self) -> u64; //bytes
     fn get_bytes_total(&self) -> u64; //bytes
-    fn copy(&mut self, src: &str, dst: &str) -> io::Result<()>;
+    fn copy(&mut self, src: &str, dst: &str) -> Result<(), &str>;
 }
 
 pub struct FSCopier {
@@ -54,19 +53,25 @@ impl Copier for FSCopier {
         self.total_bytes
     }
 
-    fn copy(&mut self, src: &str, dst: &str) -> io::Result<()> {
+    fn copy(&mut self, src: &str, dst: &str) -> Result<(), &str> {
         let src_path = Path::new(src);
-        let mut src_file = File::open(&src_path).expect("Failed to open source file");
+        let mut src_file =
+            File::open(&src_path).expect(&format!("Failed to open source file: {}", src));
         let tmp = FSCopier::get_dst_path(src, dst);
         let dst_path = Path::new(&tmp);
-        let mut dst_file = File::create(dst_path)?;
+        let mut dst_file =
+            File::create(dst_path).expect(&format!("Failed to create destination file {}", dst));
 
         self.total_bytes = src_file.metadata().unwrap().len();
 
         let mut buffer = Vec::with_capacity(self.bs as usize);
         while self.copied_bytes < self.total_bytes {
-            let r_sz: usize = src_file.read(&mut buffer).expect(&format!("Failed at reading from {}", src));
-            dst_file.write_all(&buffer).expect(&format!("Failed at writing to {}", dst));
+            let r_sz: usize = src_file
+                .read(&mut buffer)
+                .expect(&format!("Failed at reading from source file {}", src));
+            dst_file
+                .write_all(&buffer)
+                .expect(&format!("Failed at writing to destination file {}", dst));
             self.copied_bytes += r_sz as u64;
             (self.on_copy_block)(self);
         }
