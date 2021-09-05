@@ -2,3 +2,12 @@ target*
 *.lock
 
 .DS_Store
+
+#visual studio code
+/.vscode
+
+#jet brains ide
+/.idea
+
+# vim
+.swp
