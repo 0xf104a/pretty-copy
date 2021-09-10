@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 
-trait Copier {
-    fn new(&self, bs: u64, on_copy_block: &'static dyn Fn(&Self)) -> Self; //bs = block size = amount of bytes to copy before updating a progress
+pub trait Copier {
+    fn new(bs: u64, on_copy_block: &'static dyn Fn(&Self)) -> Self; //bs = block size = amount of bytes to copy before updating a progress
     fn get_bytes_copied(&self) -> u64; //bytes
     fn get_bytes_total(&self) -> u64; //bytes
     fn copy(&mut self, src: &str, dst: &str) -> Result<(), &str>;
@@ -36,7 +36,7 @@ impl FSCopier {
 }
 
 impl Copier for FSCopier {
-    fn new(&self, _bs: u64, _on_copy_block: &'static dyn Fn(&FSCopier)) -> FSCopier {
+    fn new(_bs: u64, _on_copy_block: &'static dyn Fn(&FSCopier)) -> FSCopier {
         FSCopier {
             bs: _bs,
             total_bytes: 0,
@@ -73,6 +73,7 @@ impl Copier for FSCopier {
                 .write_all(&buffer)
                 .expect(&format!("Failed at writing to destination file {}", dst));
             self.copied_bytes += r_sz as u64;
+            println!("r_sz={x}", x=r_sz);
             (self.on_copy_block)(self);
         }
         Ok(())
